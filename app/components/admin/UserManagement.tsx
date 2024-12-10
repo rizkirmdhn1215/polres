@@ -69,7 +69,7 @@ export default function AllReportsManagement() {
       } as Report));
       setReports(reportsData);
     } catch (error) {
-      console.error('Error fetching reports:', error);
+      alert('Gagal memuat daftar laporan. Silakan refresh halaman.');
     } finally {
       setLoading(false);
     }

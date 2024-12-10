@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TextField, Button, Typography, Box, Link, Paper, IconButton } from '@mui/material';
 import Image from 'next/image';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -12,6 +12,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -22,6 +23,13 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,13 +57,17 @@ export default function RegisterPage() {
         createdAt: new Date()
       });
 
+      alert('Registrasi berhasil! Anda akan diarahkan ke dashboard.');
       router.push('/dashboard');
     } catch (error: any) {
-      console.error('Registration error:', error);
       if (error.code === 'auth/email-already-in-use') {
         setError('Email sudah terdaftar');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password terlalu lemah. Minimal 6 karakter.');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Format email tidak valid');
       } else {
-        setError('Terjadi kesalahan saat registrasi');
+        setError('Terjadi kesalahan saat registrasi. Silakan coba lagi.');
       }
     }
   };

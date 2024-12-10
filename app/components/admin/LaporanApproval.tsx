@@ -51,12 +51,11 @@ export default function LaporanApproval() {
     try {
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
-        return userDoc.data().name || userDoc.data().email || 'Unknown User';
+        return userDoc.data().name || userDoc.data().email || 'Pengguna tidak dikenal';
       }
-      return 'Unknown User';
+      return 'Pengguna tidak dikenal';
     } catch (error) {
-      console.error('Error fetching user:', error);
-      return 'Unknown User';
+      return 'Pengguna tidak dikenal';
     }
   };
 
@@ -80,7 +79,7 @@ export default function LaporanApproval() {
       const reportsData = await Promise.all(reportsPromises);
       setReports(reportsData);
     } catch (error) {
-      console.error('Error fetching reports:', error instanceof Error ? error.message : 'Unknown error');
+      alert('Gagal memuat daftar laporan. Silakan refresh halaman.');
     } finally {
       setLoading(false);
     }
@@ -129,8 +128,9 @@ export default function LaporanApproval() {
 
       await fetchReports();
       handleCloseReview();
+      alert('Status laporan berhasil diperbarui');
     } catch (error) {
-      console.error('Error updating report:', error);
+      alert('Gagal memperbarui status laporan. Silakan coba lagi.');
     }
   };
 

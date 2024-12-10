@@ -1,58 +1,50 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, getAuth } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { getUserRole } from '../firebase/user';
+import { useRouter } from 'next/navigation';
+import nookies from 'nookies';
 
-export interface AuthContextType {
-  user: User | null;
-  role: 'admin' | 'user' | null;
-  loading: boolean;
-  logout: () => void;
-}
+export const AuthContext = createContext<any>({});
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const useAuth = () => useContext(AuthContext);
 
-export function AuthContextProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<'admin' | 'user' | null>(null);
+export const AuthContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // User is signed in
+        const token = await user.getIdToken();
+        // Set session cookie
+        nookies.set(undefined, 'session', token, {
+          maxAge: 30 * 24 * 60 * 60,
+          path: '/',
+        });
         setUser(user);
-        const userRole = await getUserRole(user.uid);
-        setRole(userRole);
       } else {
+        // User is signed out
+        nookies.destroy(undefined, 'session');
         setUser(null);
-        setRole(null);
+        router.push('/login');
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
-
-  const logout = async () => {
-    try {
-      await auth.signOut();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
+  }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, loading, role }}>
+      {children}
     </AuthContext.Provider>
   );
-}
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }; 

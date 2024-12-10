@@ -211,12 +211,11 @@ export default function ReportForm({ onClose, onSuccess }: ReportFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Get current user
       const auth = getAuth();
       const user = auth.currentUser;
       
       if (!user) {
-        alert('You must be logged in to submit a report');
+        alert('Silakan login terlebih dahulu');
         return;
       }
 
@@ -224,12 +223,12 @@ export default function ReportForm({ onClose, onSuccess }: ReportFormProps) {
       const now = new Date();
       const reportData = {
         ...formData,
-        userId: user.uid, // Add user ID
-        createdAt: Timestamp.fromDate(now), // Add creation timestamp
+        userId: user.uid,
+        createdAt: Timestamp.fromDate(now),
         tanggalLaporan: Timestamp.fromDate(now),
         tanggalLahir: formData.tanggalLahir ? Timestamp.fromDate(formData.tanggalLahir.toDate()) : null,
         waktuKehilangan: formData.waktuKehilangan ? Timestamp.fromDate(formData.waktuKehilangan.toDate()) : null,
-        status: 'Pending', // Set initial status
+        status: 'Pending',
         items: lostItems.map(item => ({
           ...item,
           jumlah: Number(item.jumlah)
@@ -248,15 +247,13 @@ export default function ReportForm({ onClose, onSuccess }: ReportFormProps) {
         }
       });
 
-      // Add to Firestore
-      const docRef = await addDoc(collection(db, 'reports'), reportData);
-      console.log('Document written with ID:', docRef.id);
+      await addDoc(collection(db, 'reports'), reportData);
+      alert('Laporan berhasil disimpan');
       
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error adding document:', error);
-      alert('Gagal menyimpan laporan. Silakan coba lagi.');
+      alert('Gagal menyimpan laporan. Pastikan semua data telah diisi dengan benar.');
     }
   };
 

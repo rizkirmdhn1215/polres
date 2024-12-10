@@ -49,7 +49,7 @@ export default function DashboardPage() {
       const user = auth.currentUser;
       
       if (!user) {
-        console.log('No user logged in');
+        alert('Silakan login terlebih dahulu');
         return;
       }
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
         setLatestReport({ id: doc.id, ...doc.data() } as Report);
       }
     } catch (error) {
-      console.error('Error fetching latest report:', error);
+      alert('Gagal memuat laporan terbaru. Silakan refresh halaman.');
     }
   };
 
@@ -75,7 +75,7 @@ export default function DashboardPage() {
       const user = auth.currentUser;
       
       if (!user) {
-        console.log('No user logged in');
+        alert('Silakan login terlebih dahulu');
         return;
       }
 
@@ -94,7 +94,7 @@ export default function DashboardPage() {
       
       setStatusCount(counts);
     } catch (error) {
-      console.error('Error fetching status counts:', error);
+      alert('Gagal memuat status laporan. Silakan refresh halaman.');
     }
   };
 

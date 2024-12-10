@@ -70,9 +70,10 @@ export default function ReportsPage() {
     try {
       await deleteDoc(doc(db, 'reports', selectedReport.id));
       setDeleteDialogOpen(false);
-      fetchReports(); // Refresh the list
+      alert('Laporan berhasil dihapus');
+      fetchReports();
     } catch (error) {
-      console.error('Error deleting report:', error);
+      alert('Gagal menghapus laporan. Silakan coba lagi nanti.');
     }
   };
 
@@ -90,8 +91,14 @@ export default function ReportsPage() {
   };
 
   const fetchReports = async () => {
+    if (!user) return;
+    
     try {
-      const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
+      const q = query(
+        collection(db, 'reports'), 
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
       const querySnapshot = await getDocs(q);
       const fetchedReports = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -99,7 +106,7 @@ export default function ReportsPage() {
       })) as Report[];
       setReports(fetchedReports);
     } catch (error) {
-      console.error('Error fetching reports:', error);
+      alert('Gagal memuat laporan. Silakan refresh halaman.');
     }
   };
 
