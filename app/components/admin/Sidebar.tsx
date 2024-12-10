@@ -14,6 +14,14 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   const menuItems = [
     { name: 'Dashboard', href: '/admin', icon: ChartBarIcon },
     { name: 'Semua Laporan', href: '/admin/users', icon: UserGroupIcon },
@@ -42,7 +50,7 @@ export default function Sidebar() {
             );
           })}
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 transition-colors w-full text-left"
           >
             <ArrowLeftOnRectangleIcon className="w-5 h-5" />
