@@ -1,8 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { useRouter } from 'next/navigation';
 import nookies from 'nookies';
 
 export const AuthContext = createContext<any>({});
@@ -16,8 +15,6 @@ export const AuthContextProvider = ({
 }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -34,16 +31,15 @@ export const AuthContextProvider = ({
         // User is signed out
         nookies.destroy(undefined, 'session');
         setUser(null);
-        router.push('/login');
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, role }}>
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
     </AuthContext.Provider>
   );

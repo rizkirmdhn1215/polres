@@ -1,38 +1,57 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Define routes that should be protected (require authentication)
+const PROTECTED_ROUTES = ['/dashboard', '/admin'];
+
+// Define routes that are always public
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password'];
+
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   const isAuthenticated = request.cookies.has('session');
-  const isAuthPage = request.nextUrl.pathname === '/login' || 
-                    request.nextUrl.pathname === '/register' || 
-                    request.nextUrl.pathname === '/forgot-password';
 
-  // If trying to access auth pages while logged in, redirect to dashboard
-  if (isAuthenticated && isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Debug logging
+  console.log('Current path:', pathname);
+  console.log('Is authenticated:', isAuthenticated);
+  console.log('Cookies:', request.cookies.toString());
+
+  // 1. Always allow static files and API routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/images') ||
+    pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next();
   }
 
-  // If trying to access protected pages while logged out, redirect to login
-  if (!isAuthenticated && !isAuthPage) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // 2. Always allow public routes
+  if (PUBLIC_ROUTES.includes(pathname)) {
+    return NextResponse.next();
   }
 
+  // 3. Only check authentication for protected routes
+  if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+    if (!isAuthenticated) {
+      console.log('Redirecting to login - not authenticated for protected route');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // 4. Allow all other routes to pass through
   return NextResponse.next();
 }
 
-// Add the paths that need to be protected
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - login
-     * - register
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - images (public images)
      */
-    '/((?!login|register|forgot-password|api|_next/static|_next/image|favicon.ico|images).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }; 
