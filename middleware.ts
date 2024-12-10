@@ -3,7 +3,9 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const isAuthenticated = request.cookies.has('session');
-  const isAuthPage = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register';
+  const isAuthPage = request.nextUrl.pathname === '/login' || 
+                    request.nextUrl.pathname === '/register' || 
+                    request.nextUrl.pathname === '/forgot-password';
 
   // If trying to access auth pages while logged in, redirect to dashboard
   if (isAuthenticated && isAuthPage) {
@@ -31,6 +33,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - images (public images)
      */
-    '/((?!login|register|api|_next/static|_next/image|favicon.ico|images).*)',
+    '/((?!login|register|forgot-password|api|_next/static|_next/image|favicon.ico|images).*)',
   ],
 }; 

@@ -239,6 +239,15 @@ export default function LoginPage() {
             >
               Login dengan Google
             </Button>
+
+            <Box className="text-center mt-4">
+              <Link 
+                href="/forgot-password"
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Forgot Password?
+              </Link>
+            </Box>
           </form>
         </Paper>
       </Box>
