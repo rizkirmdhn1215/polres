@@ -58,17 +58,18 @@ export default function NotificationCenter() {
 
   const sendHeaderNotification = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!headerMessage) return;
+    if (!headerMessage || !startTime || !endTime) return;
 
     setSending(true);
     try {
-      await addDoc(collection(db, 'headerNotifications'), {
+      const docRef = await addDoc(collection(db, 'headerNotifications'), {
         message: headerMessage,
         timestamp: new Date(),
-        active: true
+        active: true,
+        startTime: startTime,
+        endTime: endTime
       });
-      setHeaderMessage('');
-      alert('Header notification set successfully!');
+
       setCurrentHeaderNotification({
         message: headerMessage,
         timestamp: new Date(),
@@ -76,6 +77,11 @@ export default function NotificationCenter() {
         startTime,
         endTime
       });
+      
+      setHeaderMessage('');
+      setStartTime('');
+      setEndTime('');
+      alert('Header notification set successfully!');
     } catch (error) {
       console.error('Error setting header notification:', error);
       alert('Error setting header notification');
