@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   UserGroupIcon, 
   DocumentCheckIcon, 
@@ -9,16 +9,20 @@ import {
   ArrowLeftOnRectangleIcon 
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/app/context/AuthContext';
+import { auth } from '@/app/firebase/config';
+import { signOut } from 'firebase/auth';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut(auth);
+      router.push('/login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error during logout:', error);
     }
   };
 
