@@ -1,67 +1,63 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { TextField, Button, Typography, Box, Link, Paper, IconButton, Divider } from '@mui/material';
+import { useState } from 'react';
+import { TextField, Button, Typography, Box, Link, Paper, IconButton } from '@mui/material';
 import Image from 'next/image';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import EmailIcon from '@mui/icons-material/Email';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import GoogleIcon from '@mui/icons-material/Google';
-import { signInWithEmail, signInWithGoogle, getUserRole } from '../firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, db } from '../firebase/config';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
-  const [username, setUsername] = useState('');
+export default function RegisterPage() {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleRoleBasedRedirect = async (uid: string) => {
-    try {
-      const userRole = await getUserRole(uid);
-      
-      if (userRole === 'admin') {
-        router.push('/admin/dashboard'); // Admin dashboard
-      } else {
-        router.push('/dashboard'); // Regular user dashboard
-      }
-    } catch (error) {
-      console.error('Error checking role:', error);
-      router.push('/dashboard'); // Default fallback
-    }
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (password !== confirmPassword) {
+      setError('Password tidak cocok');
+      return;
+    }
+
     try {
-      const result = await signInWithEmail(username, password);
-      await handleRoleBasedRedirect(result.user.uid);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Update profile with full name
+      await updateProfile(user, {
+        displayName: fullName
+      });
+
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        fullName,
+        email,
+        role: 'user',
+        createdAt: new Date()
+      });
+
+      router.push('/dashboard');
     } catch (error: any) {
-      console.error('Login error:', error);
-      if (error.code === 'auth/invalid-credential') {
-        setError('Email atau password salah');
+      console.error('Registration error:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('Email sudah terdaftar');
       } else {
-        setError('Terjadi kesalahan saat login');
+        setError('Terjadi kesalahan saat registrasi');
       }
     }
-  };
-
-  const handleGoogleLogin = async () => {
-    setError('');
-    try {
-      const result = await signInWithGoogle();
-      await handleRoleBasedRedirect(result.user.uid);
-    } catch (error: any) {
-      console.error('Google login error:', error);
-      setError('Terjadi kesalahan saat login dengan Google');
-    }
-  };
-
-  const handleTogglePassword = () => {
-    setShowPassword((prev) => !prev);
   };
 
   return (
@@ -77,7 +73,7 @@ export default function LoginPage() {
         />
       </Box>
 
-      {/* Right side - Login Form (40%) */}
+      {/* Right side - Register Form (40%) */}
       <Box className="w-full md:w-[40%] flex items-center justify-center p-8">
         <Paper 
           elevation={24} 
@@ -112,17 +108,17 @@ export default function LoginPage() {
               variant="subtitle1" 
               className="text-gray-600 font-inter"
             >
-              Pelaporan Kehilangan Barang
+              Daftar Akun Baru
             </Typography>
           </Box>
 
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
             <TextField
               fullWidth
-              label="Username"
+              label="Nama Lengkap"
               variant="outlined"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <PersonOutlineIcon className="text-gray-400 mr-2" />
@@ -134,7 +130,28 @@ export default function LoginPage() {
                   transition: 'box-shadow 0.3s ease-in-out',
                 }
               }}
-              className="mb-4"
+              required
+            />
+
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              variant="outlined"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <EmailIcon className="text-gray-400 mr-2" />
+                ),
+                sx: {
+                  '&:hover': {
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  },
+                  transition: 'box-shadow 0.3s ease-in-out',
+                }
+              }}
+              required
             />
             
             <TextField
@@ -150,8 +167,7 @@ export default function LoginPage() {
                 ),
                 endAdornment: (
                   <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleTogglePassword}
+                    onClick={() => setShowPassword(!showPassword)}
                     edge="end"
                     size="large"
                     className="text-gray-400"
@@ -166,20 +182,42 @@ export default function LoginPage() {
                   transition: 'box-shadow 0.3s ease-in-out',
                 }
               }}
-              className="mb-2"
+              required
             />
 
-            <Box className="text-right mb-6">
-              <Link 
-                href="/forgot-password" 
-                className="text-sm text-blue-600 hover:text-blue-800 font-inter no-underline hover:underline transition-colors duration-200"
-              >
-                Lupa Password?
-              </Link>
-            </Box>
+            <TextField
+              fullWidth
+              label="Konfirmasi Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              variant="outlined"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <LockOutlinedIcon className="text-gray-400 mr-2" />
+                ),
+                endAdornment: (
+                  <IconButton
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    edge="end"
+                    size="large"
+                    className="text-gray-400"
+                  >
+                    {showConfirmPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                  </IconButton>
+                ),
+                sx: {
+                  '&:hover': {
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  },
+                  transition: 'box-shadow 0.3s ease-in-out',
+                }
+              }}
+              required
+            />
 
             {error && (
-              <Typography color="error" className="text-center text-sm mb-4">
+              <Typography color="error" className="text-center text-sm">
                 {error}
               </Typography>
             )}
@@ -197,40 +235,20 @@ export default function LoginPage() {
                 }
               }}
             >
-              Login
+              Daftar
             </Button>
 
-            <Divider className="my-6">atau</Divider>
-
-            <Box className="text-center mb-4">
+            <Box className="text-center mt-4">
               <Typography variant="body2" className="text-gray-600">
-                Belum punya akun?{' '}
+                Sudah punya akun?{' '}
                 <Link 
-                  href="/register" 
+                  href="/login" 
                   className="text-blue-600 hover:text-blue-800 font-semibold no-underline hover:underline"
                 >
-                  Daftar
+                  Login
                 </Link>
               </Typography>
             </Box>
-
-            <Button
-              fullWidth
-              variant="outlined"
-              size="large"
-              onClick={handleGoogleLogin}
-              startIcon={<GoogleIcon />}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              sx={{
-                borderColor: 'rgba(0,0,0,0.1)',
-                '&:hover': {
-                  borderColor: 'rgba(0,0,0,0.2)',
-                  backgroundColor: 'rgba(0,0,0,0.02)',
-                }
-              }}
-            >
-              Login dengan Google
-            </Button>
           </form>
         </Paper>
       </Box>
